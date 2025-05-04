@@ -59,10 +59,10 @@ Give the application a name and slug and ***make sure to set the provider for th
 Next is to set the embedded outpost to use the Forward Auth Provider you created. In Authentik go to `Applications -> Outposts` and you should see the default embedded outpost\
 ![5.png](/images/5.png)
 
-Edit the embedded outpost and make sure to copy the Forward Auth Application you created earlier over to the `Selected Applicaatios` box. Also expand the `Advanced settings` section and for `authentik_host` you want to put the prosy URL that you will use to access Authentik over HAProxy. This should be the same URL you entered as the Authentication URL in the provider.\
+Edit the embedded outpost and make sure to copy the Forward Auth Application you created earlier over to the `Selected Applicaatios` box. Also expand the `Advanced settings` section and for `authentik_host` you want to put the proxy URL that you will use to access Authentik over HAProxy. This should be the same URL you entered as the Authentication URL in the provider.\
 ![6.png](/images/6.png)
 
-And that should be it for the setting up your Authentik instance. We will now move over to pfSense and getting HAProxy setup in the coming steps.
+And that should be it for setting up your Authentik instance. We will now move over to pfSense and getting HAProxy setup in the coming steps.
 
 
 ## Step 3 - Install and configure HAproxy
@@ -94,12 +94,12 @@ After adding the files, save and apply config, you should NOT get any errors. If
 
 ## Step 4 - Configure Backends
 
-After successfully adding the required files from [[pfSense-HaProxy-Authentik Setup#Step 3 - Install and configure HAproxy|Step 3]] above, you can start to configure the backends.
+After successfully adding the required files from Step 3 above, you can start to configure the backends.
 
 ### Setup Backend for Authentik
-You need to setup a backends for Authentik. To do so, go to `Services -> HAProxy -> Backend` and add a backend.
+You need to setup a backend for Authentik. To do so, go to `Services -> HAProxy -> Backend` and add a backend.
 
-For the backend I will simply name mine as `authentik-http`, fell free to name your backend whatever you want. This name will be relevant later on in the documentation so remember it. You will also need to populate the Address and Port fields with the IP address of your Authentik instance and the port for http, then save. See image below for reference\
+For the backend I will simply name mine as `authentik-http`, feel free to name your backend whatever you want. This name will be relevant later on in the documentation so remember it. You will also need to populate the Address and Port fields with the IP address of your Authentik instance and the port for http, then save. See image below for reference\
 ![8.png](/images/8.png)
 
 ### Setup backend you want to protect
@@ -126,7 +126,7 @@ In the front end you will need to setup the ACL below ensuring it is the first A
 ```
 acl protected-frontends hdr(host) -m reg -i ^(?i)(service1|service2)\.yourdomain\.com
 ```
-Based on the ACL above the backends at `https://service1.yourdomain.com` and `https://service2.yourdomain.com` will be protected by a authentik login prompt. You can add more services by just adding a `|` and adding the other service you want to protect. For example if you want to protect a service at `https://service3.yourdomain.com` then the ACL would be modified to be `(service1|service2|service3)\.lojlocal\.com`
+Based on the ACL above the backends at `https://service1.yourdomain.com` and `https://service2.yourdomain.com` will be protected by a authentik login prompt. You can add more services by just adding a `|` and adding the other service you want to protect. For example if you want to protect a service at `https://service3.yourdomain.com` then the ACL would be modified to be `(service1|service2|service3)\.yourdomain\.com`
 
 See images below for reference:\
 ![11.png](/images/11.png)
