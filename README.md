@@ -42,25 +42,25 @@ Enter a email and a strong password and then click Continue and you should be lo
 Now that you setup Authentik and is logged in we will need to setup a Provider and an Application to handle Forward Auth requests.
 
 The first is to setup a new Provider for Forward Auth (Domain Level). In Authentik go to `Applications -> Providers` and create a new Provider. Select `Proxy Provider` and click Next to continue.\
-![1.png](/images/1.png)\
+![1.png](/images/1.png)
 On the next screen give the provider a name and set Authentication Flow to ***...explicit-consent..***. Make sure `Forward auth (domain level)` is selected and enter the Authentication URL and Cookie domain.
 
 The `Authentication URL` is the proxy URL that you will use to access Authentik via HAProxy and the `Cookie domain` is your root domain.\
-![2.png](/images/2.png)\
+![2.png](/images/2.png)
 
 Now scroll down to the `Advanced flow settings` section and make sure `Authentication flow` and `Invalidation flow` are set. I am using the defaults here.\
-![3.png](/images/3.png)\
+![3.png](/images/3.png)
 
 Next is to setup a new Application. In Authentik go to `Applications -> Applications` and create a new Application.
 
 Give the application a name and slug and ***make sure to set the provider for the application to the one you just created*** \
-![4.png](/images/4.png)\
+![4.png](/images/4.png)
 
 Next is to set the embedded outpost to use the Forward Auth Provider you created. In Authentik go to `Applications -> Outposts` and you should see the default embedded outpost\
-![5.png](/images/5.png)\
+![5.png](/images/5.png)
 
 Edit the embedded outpost and make sure to copy the Forward Auth Application you created earlier over to the `Selected Applicaatios` box. Also expand the `Advanced settings` section and for `authentik_host` you want to put the prosy URL that you will use to access Authentik over HAProxy. This should be the same URL you entered as the Authentication URL in the provider.\
-![6.png](/images/6.png)\
+![6.png](/images/6.png)
 
 And that should be it for the setting up your Authentik instance. We will now move over to pfSense and getting HAProxy setup in the coming steps.
 
