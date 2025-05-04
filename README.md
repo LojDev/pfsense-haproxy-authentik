@@ -1,19 +1,8 @@
+
 This documentation aims to outline the steps I did to get Authentik working via HAProxy on pfSense. 
 
-## Before We Begin
-I've tried my best to make this documentation as user and noob friendly as possible so even a complete beginner will be able to follow and get everything working. This documentation will not touch on every single thing but I did try to explain even the thing that I thought was common knowledge, so to all the seasoned persons reading, just bear with me... I want this to be noob friendly.
-
-### Some assumptions:
-1. You will be using docker to host Authentik and you already have docker / docker compose installed in your environment. I will not touch on this as it is very easy to install and there are lots of tutorials on the internet about it, plus installing docker may vary depending on your OS and environment so for those reasons I will not touch on that.
-2. I will be writing this documentation with the assumption that everyone following along has a "clean" environment, meaning they do not already have Authentik installed and do not have HAProxy installed and configured on pfSense. If you do not have a "clean" environment, you can still follow along but you will need to make necessary adjustments based on your environment.
-3. It is assumed that you already have a pfSense instance, whether it be pfSense+ or pfSense CE, whether you have dedicated Netgate Hardware or running pfSense in a VM. Note: steps will be the same whether you are running pfSense+ or CE. 
-
-### My Environment
-The following network diagram is a snippet of my homelab. I will be using the information in the diagram to aid in this documentation.
-![1.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C1.png)
-
 ## Step 1 - Download Required Files
-This repo contains a copy of my docker compose stack I used to setup my Authentik instance. It also contain the lua files that are needed to be imported on pfSense to get HAProxy working. I also included links to to original repos in the table below where I got these files from in case you may want to get them from the source.
+This repo contains a copy of the lua files that are needed to be imported on pfSense to get HAProxy working. I also included links to to original repos in the table below where I got these files from in case you may want to get them from the source.
 
 | Name                 | Type          | content                                                                                                                                                                |
 | :------------------- | :------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -44,35 +33,34 @@ Now you just need to run the containers. Do so by running the following command
 docker compose up -d
 ```
 
-After Authentik is running, browse to `https://[ip-of-docker-host]:[authentik-https-port]/if/flow/initial-setup/` (In my case it would be `https://192.168.50.10:9444/if/flow/initial-setup/`). You should be presented with a page to setup user email and password.
+After Authentik is running, browse to `https://[ip-of-docker-host]:[authentik-https-port]/if/flow/initial-setup/` (In my case it would be `https://192.168.50.10:9444/if/flow/initial-setup/`). You should be presented with a page to setup user email and password.\
+![0.png](/images/0.png)
+
+Enter a email and a strong password and then click Continue and you should be logged in to Authentik
 
 ### Configure Authentik Outpost, Provider and Application
 Now that you setup Authentik and is logged in we will need to setup a Provider and an Application to handle Forward Auth requests.
 
-The first is to setup a new Provider for Forward Auth (Domain Level). In Authentik go to `Applications -> Providers` and create a new Provider. Select `Proxy Provider` and click Next to continue.
-![2.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C2.png)
-
+The first is to setup a new Provider for Forward Auth (Domain Level). In Authentik go to `Applications -> Providers` and create a new Provider. Select `Proxy Provider` and click Next to continue.\
+![1.png](/images/1.png)\
 On the next screen give the provider a name and set Authentication Flow to ***...explicit-consent..***. Make sure `Forward auth (domain level)` is selected and enter the Authentication URL and Cookie domain.
 
-The `Authentication URL` is the proxy URL that you will use to access Authentik via HAProxy and the `Cookie domain` is your root domain.
-![3.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C3.png)
+The `Authentication URL` is the proxy URL that you will use to access Authentik via HAProxy and the `Cookie domain` is your root domain.\
+![2.png](/images/2.png)\
 
-Now scroll down to the `Advanced flow settings` section and make sure `Authentication flow` and `Invalidation flow` are set. I am using the defaults here.
-![4.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C4.png)
+Now scroll down to the `Advanced flow settings` section and make sure `Authentication flow` and `Invalidation flow` are set. I am using the defaults here.\
+![3.png](/images/3.png)\
 
 Next is to setup a new Application. In Authentik go to `Applications -> Applications` and create a new Application.
 
-Give the application a name and slug and ***make sure to set the provider for the application to the one you just created*** 
-![5.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C5.png)
+Give the application a name and slug and ***make sure to set the provider for the application to the one you just created*** \
+![4.png](/images/4.png)\
 
-Next is to set the embedded outpost to use the Forward Auth Provider you created. In Authentik go to `Applications -> Outposts` and you should see the default embedded outpost
-![6.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C6.png)
+Next is to set the embedded outpost to use the Forward Auth Provider you created. In Authentik go to `Applications -> Outposts` and you should see the default embedded outpost\
+![5.png](/images/5.png)\
 
-Edit the embedded outpost and make sure to copy the Forward Auth Application you created earlier over to the `Selected Applicaatios` box
-![7.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C7.png)
-
-Expand the `Advanced settings` section and for `authentik_host` you want to put the prosy URL that you will use to access Authentik over HAProxy. This should be the same URL you entered as the Authentication URL in the provider.
-![8.png](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C8.png)
+Edit the embedded outpost and make sure to copy the Forward Auth Application you created earlier over to the `Selected Applicaatios` box. Also expand the `Advanced settings` section and for `authentik_host` you want to put the prosy URL that you will use to access Authentik over HAProxy. This should be the same URL you entered as the Authentication URL in the provider.\
+![6.png](/images/6.png)\
 
 And that should be it for the setting up your Authentik instance. We will now move over to pfSense and getting HAProxy setup in the coming steps.
 
@@ -99,8 +87,8 @@ cp /tmp/auth-request.lua /usr/local/share/lua/5.3/auth-request.lua
 ```
 
 ### Configure HAProxy to use the lua files
-Go to `Services -> HAProxy` and under the `Files` tab add the 3 lua files. When adding the files, you will need to copy all the contents of the files you are adding and paste it in the content section on pfSense. Use the image below as reference:
-![9.jpg](file:///C:%5CUsers%5Cl.buchanan%5CDropbox%5CObsidian%5CImages%5Cnotes%5Cpfsense%5Cauthentik-haproxy%5C9.jpg)
+Go to `Services -> HAProxy` and under the `Files` tab add the 3 lua files. When adding the files, you will need to copy all the contents of the files you are adding and paste it in the content section on pfSense. Use the image below as reference:\
+![7.jpg](/images/7.jpg)
 
 After adding the files, save and apply config, you should NOT get any errors. If you get any errors or warnings then something went wrong so recheck everything you did up to this point.
 
@@ -111,16 +99,16 @@ After successfully adding the required files from [[pfSense-HaProxy-Authentik Se
 ### Setup Backend for Authentik
 You need to setup a backends for Authentik. To do so, go to `Services -> HAProxy -> Backend` and add a backend.
 
-For the backend I will simply name mine as `authentik-http`, fell free to name your backend whatever you want. This name will be relevant later on in the tutorial so remember it. You will also need to populate the Address and Port fields with the IP address of your Authentik instance and the port for http, then save. See image below for reference
-![Screenshot 2025-05-01 101410.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20101410.png)
+For the backend I will simply name mine as `authentik-http`, fell free to name your backend whatever you want. This name will be relevant later on in the documentation so remember it. You will also need to populate the Address and Port fields with the IP address of your Authentik instance and the port for http, then save. See image below for reference\
+![8.png](/images/8.png)
 
 ### Setup backend you want to protect
 In addition to setting up the backend for Authentik, you will also need to setup the backend/s for any service/s you want to protect. 
 
 For the sake of this tutorial lets say I have a service (snipe-it) that I want to protect. This service is running at 192.168.12.3 on http port 4000.
 
-The backend setup is the same, give it a name and populate the Address and Port.
-![Screenshot 2025-05-01 104631.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20104631.png)
+The backend setup is the same, give it a name and populate the Address and Port.\
+![9.png](/images/9.png)
 
 Now just save and apply config. You should NOT get any errors. If you get any errors or warnings then something went wrong so recheck everything you did up to this point.
 
@@ -130,8 +118,8 @@ Now just save and apply config. You should NOT get any errors. If you get any er
 ### Create Frontend And Set Listen IP and Port
 Now you need to setup a frontend to tie everything together. To do so, go to `Services -> HAProxy -> Frontend` and add a frontend.
 
-You can name the frontend whatever you want, the important thing is to set the Listen Address you want HAProxy to listen on and also the port you want it to listen on. See image below for reference:
-![Screenshot 2025-05-01 110159.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20110159.png)
+You can name the frontend whatever you want, the important thing is to set the Listen Address you want HAProxy to listen on and also the port you want it to listen on. See image below for reference:\
+![10.png](/images/10.png)
 
 ### Setting up Access Control Lists
 In the front end you will need to setup the ACL below ensuring it is the first ACL in the list. This ACL will determine which backends are protected by authentik based on the url.
@@ -140,200 +128,176 @@ acl protected-frontends hdr(host) -m reg -i ^(?i)(service1|service2)\.yourdomain
 ```
 Based on the ACL above the backends at `https://service1.yourdomain.com` and `https://service2.yourdomain.com` will be protected by a authentik login prompt. You can add more services by just adding a `|` and adding the other service you want to protect. For example if you want to protect a service at `https://service3.yourdomain.com` then the ACL would be modified to be `(service1|service2|service3)\.lojlocal\.com`
 
-See images below for reference:
-![Screenshot 2025-05-01 112007.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20112007.png)
+See images below for reference:\
+![11.png](/images/11.png)
 
 Now setup the following ACLs as well.
 
 ```
-acl protected-frontends var(txn.txnhost) -m reg -i ^(?i)(service1|service2)\.yourdomain\.com
-```
-Reference:
-![Screenshot 2025-05-01 112657.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20112657.png)
-
-
-```
 acl is_authentikoutpost path -m reg ^/outpost.goauthentik.io/
 ```
-Reference:
-![Screenshot 2025-05-01 112708.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20112708.png)
+Reference:\
+![12.png](/images/12.png)
 
 
-```
-acl is_authentikoutpost var(txn.txnhost) -m reg ^/outpost.goauthentik.io/
-```
-Reference:
-![Screenshot 2025-05-01 112715.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20112715.png)
-
-
-For each backend you want to protect you will need to add an ACL for it, specifying the fqdn that backend service should be proxied through. Example below
+For each backend service you want to protect you will need to add an ACL for it, specifying the FQDN for that service. Example below
 
 ```
 acl service1 hdr(host) -i service1.yourdomain.com
 ```
-Reference:
-![Screenshot 2025-05-01 112723.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20112723.png)
+Reference:\
+![13.png](/images/13.png)
+
+You will also need to create an ACL for Authentik itself also and this one is important because whatever FQDN you use here should match the one set in Authentik. For mine, I have it set to `authentik.mydomain.com`.
+\
+![15.png](/images/15.png)
 
 
-You will also need to create an ACL for authentik itself also and this one is important because whatever fqdn you use here should match the one set in Authentik. For mine, I have it set to `authentik.mydomain.com`.
-
-![Screenshot 2025-05-01 112805.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20112805.png)
-
-
-
-When you are done setting up the ACLs, you should have something similar to mine shown below:
-![Screenshot 2025-05-01 114359.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20114359.png)
+When you are done setting up the ACLs, you should have something similar to mine shown below:\
+![16.png](/images/16.png)
 
 
 ### Setting up Actions
 The actions controls what happens when a incoming request to the proxy matches any ACLs.
 
+Scroll down to the Actions section and add the following actions:
+
 ```
 http-request set-var(req.scheme) str(https) if { ssl_fc }
 ```
-If this is not set then there will be a warning in Authentik that HTTPS is not detected correctly. From my very short testing I did not see any noticeable impact to the functionality of Authentik when that warning was displayed, but I think it's worth pointing this out.
+Reference\
+![17.png](/images/17.png)
+\
+If the above action is not set then there will be a warning in Authentik that HTTPS is not detected correctly. See warning in image below:\
+![18.png](/images/18.png)
+From my very short testing I did not see any noticeable impact to the functionality of Authentik when that warning was displayed, but I think it's worth pointing this out.
 
 
 ```
 http-request set-var(req.scheme) str(http) if !{ ssl_fc }
 ```
-Reference:
-![[Screenshot 2025-05-01 115645.png]]
+Reference:\
+![19.png](/images/19.png)
 
 
 
 ```
 http-request set-var(req.questionmark) str(?) if { query -m found }
 ```
-Reference:
-![[Screenshot 2025-05-01 115807.png]]
+Reference:\
+![20.png](/images/20.png)
 
 
 
 ```
 http-request set-header X-Real-IP %[src]
 ```
-Reference:
-![[Screenshot 2025-05-01 120840.png]]
-
-![[Screenshot 2025-05-01 120906.png]]
+Reference:\
+![21.png](/images/21.png)
+\
+![22.png](/images/22.png)
 
 
 
 ```
 http-request set-header X-Forwarded-Method %[method]
 ```
-Reference:
-![[Screenshot 2025-05-01 121015.png]]
-
-![[Screenshot 2025-05-01 121030.png]]
+Reference:\
+![23.png](/images/23.png)
+\
+![24.png](/images/24.png)
 
 
 
 ```
 http-request set-header X-Forwarded-Proto %[var(req.scheme)]
 ```
-Reference;
-![[Screenshot 2025-05-01 121056.png]]
-
-![[Screenshot 2025-05-01 121109.png]]
+Reference;\
+![25.png](/images/25.png)
+\
+![26.png](/images/26.png)
 
 
 
 ```
 http-request set-header X-Forwarded-Host %[req.hdr(Host)]
 ```
-Reference:![[Screenshot 2025-05-01 121204.png]]
-
-![[Screenshot 2025-05-01 121224.png]]
+Reference:\
+![27.png](/images/27.png)
+\
+![28.png](/images/28.png)
 
 
 
 ```
 http-request set-header X-Original-URL %[url]
 ```
-Reference:
-![[Screenshot 2025-05-01 121342.png]]
-
-![[Screenshot 2025-05-01 121358.png]]
+Reference:\
+![29.png](/images/29.png)
+\
+![30.png](/images/30.png)
 
 
 
 ```
 http-request lua.auth-intercept authentik-http_ipvANY /outpost.goauthentik.io/auth/nginx HEAD x-original-url,x-real-ip,x-forwarded-host,x-forwarded-proto,user-agent,cookie,accept,x-forwarded-method x-authentik-username,x-authentik-uid,x-authentik-email,x-authentik-name,x-authentik-groups - if protected-frontends !is_authentikoutpost
 ```
-Reference:
-![Screenshot 2025-05-01 121457_2.png](file:///C:%5CUsers%5Cl.buchanan%5CDownloads%5CScreenshot%202025-05-01%20121457_2.png)
+Reference:\
+![31.png](/images/31.png)
 
-Make note of the `authentik-http_ipvANY`. This is the authentik http backed created earlier in the documentation, pfSense automatically adds `_ipvANY` to all backend names in the haproxy config. You should replace `authentik-http` with the name of your backend.
+Make note of the `authentik-http_ipvANY`. This is the Authentik http backed created earlier in the documentation, pfSense automatically adds `_ipvANY` to all backend names in the HAProxy config. You should replace `authentik-http` with the name of your backend.
 
 
 ```
 http-request redirect code 302 location /outpost.goauthentik.io/start?rd=%[hdr(X-Original-URL)] if protected-frontends !{ var(txn.auth_response_successful) -m bool } { var(txn.auth_response_code) -m int 401 } !is_authentikoutpost
 ```
-Reference:
-![[Screenshot 2025-05-01 122821.png]]
-
-![[Screenshot 2025-05-01 122839.png]]
+Reference:\
+![32.png](/images/32.png)
 
 
 ```
 http-request deny if protected-frontends !{ var(txn.auth_response_successful) -m bool } { var(txn.auth_response_code) -m int 403 } !is_authentikoutpost
 ```
-Reference:
-![[Screenshot 2025-05-01 122907.png]]
-
-![[Screenshot 2025-05-01 122956.png]]
+Reference:\
+![33.png](/images/33.png)
 
 
 ```
 http-request redirect location %[var(txn.auth_response_location)] if protected-frontends !{ var(txn.auth_response_successful) -m bool } !is_authentikoutpost
 ```
-Reference:
-![[Screenshot 2025-05-01 123019.png]]
-
-![[Screenshot 2025-05-01 123035.png]]
+Reference:\
+![34.png](/images/34.png)
 
 
 
 ```
 http-response set-header Strict-Transport-Security "max-age=63072000"
 ```
-Reference:
-![Screenshot 2025-05-01 123126.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20123126.png)
-
-
-
-```
-http-request set-var(txn.txnhost) hdr(host)
-```
-Reference:
-![Screenshot 2025-05-01 123226.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20123226.png)
-
-
-
-```
-http-request set-var(txn.txnpath) path
-```
-Reference:
-![Screenshot 2025-05-01 123241.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20123241.png)
+Reference:\
+![35.png](/images/35.png)
 
 
 
 ```
 use_backend authentik-http_ipvANY if protected-frontends is_authentikoutpost
 ```
-Reference:
-![Screenshot 2025-05-01 125120.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20125120.png)
+Reference:\
+![36.png](/images/36.png)
 
 
-Now you should add actions for all the backends. 
-![[Screenshot 2025-05-01 125508.png]]
+Now you should add actions for all the backends. \
+![37.png](/images/37.png)
+\
+![38.png](/images/38.png)
+***NOTE:*** The names in the `See below` field should match the the names used when setting up the ACLs. So the names above should be the same as the name used when creating the ACLs below:\
+![39.png](/images/39.png)
 
-![[Screenshot 2025-05-01 125538.png]]
-***NOTE:*** The names in the `See below` field should match the the names used when setting up the ACLs. So the names above should be the same as the name used when creating the ACLs below:
-![Screenshot 2025-05-01 130019.png](file:///C:%5CUsers%5Cl.buchanan%5CPictures%5CScreenshots%5CScreenshot%202025-05-01%20130019.png)
+Now just save and apply config. You should NOT get any errors. If you get any errors or warnings then something went wrong so recheck everything you did up to this point.
+
 
 ## Step 6 - Testing
 
 That should be it. Now you just need to test. Browse to the URL of any of your services that you are protecting with the `protected-frontends` ACL and it should redirect you to Authentik for authentication before you get access to the service.
+
+
+Please feel free to suggest changes or improvements or any ways that my implementation can be made better. All feedback are welcomed
