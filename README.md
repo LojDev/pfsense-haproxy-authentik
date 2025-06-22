@@ -256,7 +256,7 @@ Reference:\
 
 
 ```
-http-request deny if protected-frontends !{ var(txn.auth_response_successful) -m bool } { var(txn.auth_response_code) -m int 403 } !is_authentikoutpost
+http-request deny deny_status 401 if protected-frontends !{ var(txn.auth_response_successful) -m bool } !is_authentikoutpost
 ```
 Reference:\
 ![33.png](/images/33.png)
