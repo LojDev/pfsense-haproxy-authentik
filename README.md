@@ -99,7 +99,10 @@ After successfully adding the required files from Step 3 above, you can start to
 ### Setup Backend for Authentik
 You need to setup a backend for Authentik. To do so, go to `Services -> HAProxy -> Backend` and add a backend.
 
-For the backend I will simply name mine as `authentik-http`, feel free to name your backend whatever you want. This name will be relevant later on in the documentation so remember it. You will also need to populate the Address and Port fields with the IP address of your Authentik instance and the port for http, then save. See image below for reference\
+For the backend I will simply name mine as `authentik-http`, feel free to name your backend whatever you want. This name will be relevant later on in the documentation so remember it. You will also need to populate the Address and Port fields with the IP address of your Authentik instance and the port for ***HTTP***, then save. See image below for reference.
+
+***IMPORTANT: the port you are using for your Authentik backend MUST be the HTTP port... NOT HTTPS.***
+
 ![8.png](/images/8.png)
 
 ### Setup backend you want to protect
